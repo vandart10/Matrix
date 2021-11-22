@@ -1,0 +1,2452 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <typeinfo>
+#include<cmath>
+
+using namespace std;
+
+
+class BigInteger {
+private:
+	vector <int> v;
+	void swap(BigInteger& s) {
+		std::swap(s.v, v);
+	}
+	void zero_destroy() {
+		reverse(v.begin(), v.end());
+		while (v.size() > 1 && v.back() == 0)v.pop_back();
+		reverse(v.begin(), v.end());
+	}
+
+	BigInteger operator^ (const int& b) {
+		BigInteger copy;
+		if ((b == 0) || (*this == 0)) {
+			BigInteger a = 0;
+			return a;
+		}
+		size_t buff = 0;
+		for (size_t i = v.size(); i > 0; i--) {
+			copy.v.push_back((v[i - 1] * b + buff) % 10);
+			buff = (v[i - 1] * b + buff) / 10;
+		}
+		if (buff != 0) {
+			copy.v.push_back(buff % 10);
+			if (buff / 10 > 0)
+				copy.v.push_back(buff / 10);
+		}
+		reverse(copy.v.begin(), copy.v.end());
+		return copy;
+	}
+public:
+	BigInteger() {}
+	friend std::ostream& operator <<(std::ostream& out, const BigInteger& s);
+	friend std::istream& operator >>(std::istream& in, BigInteger& s);
+	friend bool operator==(const BigInteger&, const BigInteger&);
+	friend bool operator!=(const BigInteger&, const BigInteger&);
+	friend bool operator<=(const BigInteger&, const BigInteger&);
+	friend bool operator>=(const BigInteger&, const BigInteger&);
+	friend bool operator<(const BigInteger&, const BigInteger&);
+	friend bool operator>(const BigInteger&, const BigInteger&);
+	friend bool operator==(const BigInteger&, const int&);
+	friend bool operator!=(const BigInteger&, const int&);
+	friend bool operator<=(const BigInteger&, const int&);
+	friend bool operator>=(const BigInteger&, const int&);
+	friend bool operator<(const BigInteger&, const int&);
+	friend bool operator>(const BigInteger&, const int&);
+	friend bool operator==(const int&, const BigInteger&);
+	friend bool operator!=(const int&, const BigInteger&);
+	friend bool operator<=(const int&, const BigInteger&);
+	friend bool operator>=(const int&, const BigInteger&);
+	friend bool operator<(const int&, const BigInteger&);
+	friend bool operator>(const int&, const BigInteger&);
+	string toString();
+	string toString() const;
+	BigInteger(int a) {
+		if (a == 0)
+			v.push_back(0);
+		else {
+			bool g = false;
+			if (a < 0) {
+				a *= -1;
+				g = true;
+			}
+			while (a) {
+				v.push_back(a % 10);
+				a /= 10;
+			}
+			reverse(v.begin(), v.end());
+			if (g)v[0] *= -1;
+		}
+	}
+
+	BigInteger& operator=(BigInteger a) {
+		reverse(a.v.begin(), a.v.end());
+		while (a.v.size() > 1 && a.v.back() == 0)a.v.pop_back();
+		reverse(a.v.begin(), a.v.end());
+		swap(a);
+		return *this;
+	}
+
+	BigInteger& operator=(int a) {
+		BigInteger b(a);
+		swap(b);
+		return *this;
+	}
+
+	BigInteger& operator-=(const BigInteger& a) {
+		if (a.v[0] < 0) {
+			BigInteger c = a;
+			c.v[0] *= -1;
+			*this += c;
+			return *this;
+		}
+		else if (v[0] < 0) {
+			BigInteger c = a;
+			v[0] *= -1;
+			c += *this;
+			*this = -c;
+			return *this;
+		}
+		else {
+			BigInteger res;
+			BigInteger c = a;
+			BigInteger b = *this;
+			reverse(c.v.begin(), c.v.end());
+			reverse(b.v.begin(), b.v.end());
+			if (c.v.size() > b.v.size()) {
+				c.v.push_back(0);
+				while (c.v.size() > b.v.size()) {
+					b.v.push_back(0);
+				}
+			}
+			else {
+				b.v.push_back(0);
+				while (c.v.size() < b.v.size()) {
+					c.v.push_back(0);
+				}
+			}
+			int d = 0;
+			if (*this > a) {
+				int e = 0;
+				for (size_t i = 0; i < b.v.size(); ++i) {
+					if (b.v[i] - d - c.v[i] < 0) {
+						b.v[i] += 10 - d;
+						d = 1;
+						e = b.v[i] - c.v[i];
+					}
+					else {
+						e = b.v[i] - c.v[i] - d;
+						d = 0;
+					}
+					res.v.push_back(e);
+				}
+				reverse(res.v.begin(), res.v.end());
+				*this = res;
+			}
+			else {
+				int e = 0;
+				for (size_t i = 0; i < b.v.size(); ++i) {
+					if (c.v[i] - d - b.v[i] < 0) {
+						c.v[i] += 10 - d;
+						d = 1;
+						e = c.v[i] - b.v[i];
+					}
+					else {
+						e = c.v[i] - b.v[i] - d;
+						d = 0;
+					}
+					res.v.push_back(e);
+				}
+				reverse(res.v.begin(), res.v.end());
+				*this = -res;
+			}
+			return *this;
+		}
+	}
+
+	BigInteger& operator+=(const BigInteger& a) {
+		if (a.v[0] < 0) {
+			BigInteger c = a;
+			c.v[0] *= -1;
+			*this -= c;
+			return *this;
+		}
+		else if (v[0] < 0) {
+			BigInteger c = a;
+			v[0] *= -1;
+			c -= *this;
+			*this = c;
+			return *this;
+		}
+		else {
+			BigInteger res;
+			BigInteger c = a;
+			BigInteger b = *this;
+			reverse(c.v.begin(), c.v.end());
+			reverse(b.v.begin(), b.v.end());
+			if (c.v.size() > b.v.size()) {
+				c.v.push_back(0);
+				while (c.v.size() > b.v.size()) {
+					b.v.push_back(0);
+				}
+			}
+			else {
+				b.v.push_back(0);
+				while (c.v.size() < b.v.size()) {
+					c.v.push_back(0);
+				}
+			}
+			int d = 0;
+			for (size_t i = 0; i < b.v.size(); ++i) {
+				int e = b.v[i] + c.v[i] + d;
+				res.v.push_back(e % 10);
+				d = e / 10;
+			}
+			reverse(res.v.begin(), res.v.end());
+			*this = res;
+			return *this;
+		}
+	}
+
+	BigInteger& operator*=(const BigInteger& b) {
+		BigInteger sum = 0;
+		size_t g = 1;
+		if (v[0] < 0) {
+			v[0] *= -1;
+			g *= -1;
+		}
+		if (b.v[0] < 0)g *= -1;
+		for (size_t i = b.v.size(); i > 0; i--) {
+			BigInteger temp = (*this) ^ abs(b.v[i - 1]);
+			sum += temp;
+			v.push_back(0);
+		}
+		sum.v[0] *= g;
+		*this = sum;
+		return *this;
+	}
+
+	BigInteger& operator/=(const BigInteger& a) {
+		bool z = true;
+		if (v[0] < 0) {
+			v[0] = -v[0];
+			z = false;
+		}
+		BigInteger t = a;
+		bool y = true;
+		if (a.v[0] < 0) {
+			t.v[0] = -t.v[0];
+			y = false;
+		}
+		BigInteger copy;
+		BigInteger b = 0;
+		vector<int> result;
+		if (t > *this) {
+			*this = 0;
+			return *this;
+		}
+		else {
+			for (size_t i = 0; i < t.v.size(); ++i)
+				copy.v.push_back(v[i]);
+			int j = 0;
+			for (j = 0; j < 10; ++j) {
+				if (copy < b) {
+					if (!(j == 1 && result.size() == 0))
+						result.push_back(j - 1);
+					for (int l = 0; l < j - 1; ++l) {
+						copy -= t;
+					}
+					break;
+				}
+				b += t;
+			}
+			if (j == 10) {
+				result.push_back(j - 1);
+				for (int l = 0; l < j - 1; ++l) {
+					copy -= t;
+				}
+			}
+			for (size_t i = t.v.size(); i < v.size(); ++i) {
+				copy.v.push_back(0);
+				copy += v[i];
+				int j = 0;
+				b = 0;
+				for (j = 0; j < 10; ++j) {
+					if (copy < b) {
+						if (!(j == 1 && result.size() == 0))
+							result.push_back(j - 1);
+						for (int l = 0; l < j - 1; ++l) {
+							copy -= t;
+						}
+						break;
+					}
+					b += t;
+				}
+				if (j == 10) {
+					result.push_back(j - 1);
+					for (int l = 0; l < j - 1; ++l) {
+						copy -= t;
+					}
+				}
+			}
+			v.clear();
+			v = result;
+			if ((!y && z) || (!z && y)) return -*this;
+			return *this;
+		}
+	}
+
+	BigInteger& operator%=(const BigInteger& a) {
+		BigInteger temp = *this;
+		temp /= a;
+		temp *= a;
+		*this -= temp;
+		return *this;
+	}
+
+	BigInteger& operator+=(const int& b) {
+		BigInteger b1 = BigInteger(b);
+		*this += b1;
+		return *this;
+	}
+
+	BigInteger& operator-=(const int& b) {
+		BigInteger b1 = BigInteger(b);
+		*this -= b1;
+		return *this;
+	}
+
+	BigInteger& operator*=(const int& b) {
+		BigInteger b1 = BigInteger(b);
+		*this *= b1;
+		return *this;
+	}
+
+	BigInteger& operator/=(const int& b) {
+		BigInteger b1 = BigInteger(b);
+		*this /= b1;
+		return *this;
+	}
+
+	BigInteger& operator%=(const int& b) {
+		BigInteger b1 = BigInteger(b);
+		*this %= b1;
+		return *this;
+	}
+
+	BigInteger& operator-() {
+		zero_destroy();
+		v[0] *= -1;
+		return *this;
+	}
+
+	operator bool() {
+		if (v.size() == 0)return 0;
+		return v[0];
+	}
+
+	BigInteger& operator++() {
+		*this += BigInteger(1);
+		return *this;
+	}
+
+	BigInteger operator++(int) {
+		BigInteger copy = *this;
+		++(*this);
+		return copy;
+	}
+
+	BigInteger& operator--() {
+		*this -= BigInteger(1);
+		return *this;
+	}
+
+	BigInteger operator--(int) {
+		BigInteger copy = *this;
+		--(*this);
+		return copy;
+	}
+};
+
+BigInteger operator ""_bi(unsigned long long a) {
+	return BigInteger(a);
+}
+
+string BigInteger::toString() {
+	string s = "";
+	for (size_t i = 0; i < (*this).v.size(); i++) {
+		if ((*this).v[i] < 0) {
+			s += '-';
+			s += char(48 - (*this).v[i]);
+		}
+		else s += char(48 + (*this).v[i]);
+	}
+	return s;
+}
+
+string BigInteger::toString() const {
+	string s = "";
+	for (size_t i = 0; i < (*this).v.size(); i++) {
+		if ((*this).v[i] < 0) {
+			s += '-';
+			s += char(48 - (*this).v[i]);
+		}
+		else s += char(48 + (*this).v[i]);
+	}
+	return s;
+}
+
+std::ostream& operator <<(std::ostream& out, const BigInteger& s) {
+	for (auto i : s.v) {
+		out << i;
+	}
+	return out;
+}
+
+std::istream& operator >> (std::istream& in, BigInteger& s) {
+	char c;
+	bool less = false;
+	s = 0;
+	do {
+		c = in.get();
+	} while (isspace(c));
+	while (!in.eof() && !isspace(c)) {
+		if (c != '-') {
+			if (s)s *= 10;
+			s += BigInteger(int(c) - 48);
+		}
+		else less = true;
+		c = in.get();
+	}
+	if (less)s.v[0] *= -1;
+	return in;
+}
+
+bool operator==(const BigInteger& a, const BigInteger& b) {
+	if (a.v.size() != b.v.size())return false;
+	for (size_t i = 0; i < a.v.size(); i++)if (a.v[i] != b.v[i])return false;
+	return true;
+}
+
+bool operator!=(const BigInteger& a, const BigInteger& b) {
+	return !(a == b);
+}
+
+bool operator<=(const BigInteger& a, const BigInteger& b) {
+	if (a.v[0] <= 0 && b.v[0] >= 0)return true;
+	if (a.v[0] >= 0 && b.v[0] <= 0)return false;
+	bool f = false;
+	if (a.v[0] <= 0 && b.v[0] <= 0)f = true;
+	if (a.v.size() < b.v.size()) {
+		if (!f)return true;
+		return false;
+	}
+	if (a.v.size() > b.v.size()) {
+		if (!f)return false;
+		return true;
+	}
+	for (size_t i = 0; i < a.v.size(); i++) {
+		if (a.v[i] < b.v[i]) {
+			if (!f)return true;
+			return false;
+		}
+		if (a.v[i] > b.v[i]) {
+			if (!f)return false;
+			return true;
+		}
+	}
+	return true;
+}
+
+bool operator>=(const BigInteger& a, const BigInteger& b) {
+	if (a.v[0] <= 0 && b.v[0] >= 0)return false;
+	if (a.v[0] >= 0 && b.v[0] <= 0)return true;
+	bool f = false;
+	if (a.v[0] <= 0 && b.v[0] <= 0)f = true;
+	if (a.v.size() < b.v.size()) {
+		if (f)return true;
+		return false;
+	}
+	if (a.v.size() > b.v.size()) {
+		if (f)return false;
+		return true;
+	}
+	for (size_t i = 0; i < a.v.size(); i++) {
+		if (a.v[i] < b.v[i]) {
+			if (f)return true;
+			return false;
+		}
+		if (a.v[i] > b.v[i]) {
+			if (f)return false;
+			return true;
+		}
+	}
+	return true;
+}
+
+bool operator<(const BigInteger& a, const BigInteger& b) {
+	return (a <= b && a != b);
+}
+
+bool operator>(const BigInteger& a, const BigInteger& b) {
+	return (a >= b && a != b);
+}
+
+bool operator==(const BigInteger& a, const int& b) {
+	const BigInteger b1 = BigInteger(b);
+	if (a.v.size() != b1.v.size())return false;
+	for (size_t i = 0; i < a.v.size(); i++)if (a.v[i] != b1.v[i])return false;
+	return true;
+}
+
+bool operator!=(const BigInteger& a, const int& b) {
+	const BigInteger b1 = BigInteger(b);
+	return !(a == b1);
+}
+
+bool operator<=(const BigInteger& a, const int& b) {
+	const BigInteger b1 = BigInteger(b);
+	if (a.v.size() < b1.v.size())return true;
+	if (a.v.size() > b1.v.size())return false;
+	for (size_t i = 0; i < a.v.size(); i++) {
+		if (a.v[i] < b1.v[i])return true;
+		if (a.v[i] > b1.v[i])return false;
+	}
+	return true;
+}
+
+bool operator>=(const BigInteger& a, const int& b) {
+	const BigInteger b1 = BigInteger(b);
+	if (a.v.size() > b1.v.size())return true;
+	if (a.v.size() < b1.v.size())return false;
+	for (size_t i = 0; i < a.v.size(); i++) {
+		if (a.v[i] > b1.v[i])return true;
+		if (a.v[i] < b1.v[i])return false;
+	}
+	return true;
+}
+
+bool operator<(const BigInteger& a, const int& b) {
+	const BigInteger b1 = BigInteger(b);
+	return (a <= b1 && a != b1);
+}
+
+bool operator>(const BigInteger& a, const int& b) {
+	const BigInteger b1 = BigInteger(b);
+	return (a >= b1 && a != b1);
+}
+
+bool operator==(const int& a, const BigInteger& b) {
+	BigInteger a1 = BigInteger(a);
+	if (a1.v.size() != b.v.size())return false;
+	for (size_t i = 0; i < a1.v.size(); i++)if (a1.v[i] != b.v[i])return false;
+	return true;
+}
+
+bool operator!=(const int& a, const BigInteger& b) {
+	BigInteger a1 = BigInteger(a);
+	return !(a1 == b);
+}
+
+bool operator<=(const int& a, const BigInteger& b) {
+	BigInteger a1 = BigInteger(a);
+	if (a1.v.size() < b.v.size())return true;
+	if (a1.v.size() > b.v.size())return false;
+	for (size_t i = 0; i < a1.v.size(); i++) {
+		if (a1.v[i] < b.v[i])return true;
+		if (a1.v[i] > b.v[i])return false;
+	}
+	return true;
+}
+
+bool operator>=(const int& a, const BigInteger& b) {
+	BigInteger a1 = BigInteger(a);
+	if (a1.v.size() > b.v.size())return true;
+	if (a1.v.size() < b.v.size())return false;
+	for (size_t i = 0; i < a1.v.size(); i++) {
+		if (a1.v[i] > b.v[i])return true;
+		if (a1.v[i] < b.v[i])return false;
+	}
+	return true;
+}
+
+bool operator<(const int& a, const BigInteger& b) {
+	BigInteger a1 = BigInteger(a);
+	return (a1 <= b && a1 != b);
+}
+
+bool operator>(const int& a, const BigInteger& b) {
+	BigInteger a1 = BigInteger(a);
+	return (a1 >= b && a1 != b);
+}
+
+BigInteger operator+(const BigInteger& a, const BigInteger& b) {
+	BigInteger copy = a;
+	copy += b;
+	return copy;
+}
+
+BigInteger operator-(const BigInteger& a, const BigInteger& b) {
+	BigInteger copy = a;
+	copy -= b;
+	return copy;
+}
+
+BigInteger operator*(const BigInteger& a, const BigInteger& b) {
+	BigInteger copy = a;
+	copy *= b;
+	return copy;
+}
+
+BigInteger operator/(const BigInteger& a, const BigInteger& b) {
+	BigInteger copy = a;
+	copy /= b;
+	return copy;
+}
+
+BigInteger operator%(const BigInteger& a, const BigInteger& b) {
+	BigInteger copy = a;
+	copy %= b;
+	return copy;
+}
+
+BigInteger operator+(const int& a, const BigInteger& b) {
+	BigInteger copy = BigInteger(a);
+	copy += b;
+	return copy;
+}
+
+BigInteger operator-(const int& a, const BigInteger& b) {
+	BigInteger copy = BigInteger(a);
+	copy -= b;
+	return copy;
+}
+
+BigInteger operator*(const int& a, const BigInteger& b) {
+	BigInteger copy = BigInteger(a);
+	copy *= b;
+	return copy;
+}
+
+BigInteger operator/(const int& a, const BigInteger& b) {
+	BigInteger copy = BigInteger(a);
+	copy /= b;
+	return copy;
+}
+
+BigInteger operator%(const int& a, const BigInteger& b) {
+	BigInteger copy = BigInteger(a);
+	copy %= b;
+	return copy;
+}
+
+BigInteger operator+(const BigInteger& a, const int& b) {
+	BigInteger copy = BigInteger(b);
+	copy += a;
+	return copy;
+}
+
+BigInteger operator-(const BigInteger& a, const int& b) {
+	BigInteger copy = a;
+	copy -= BigInteger(b);
+	return copy;
+}
+
+BigInteger operator*(const BigInteger& a, const int& b) {
+	BigInteger copy = BigInteger(b);
+	copy *= a;
+	return copy;
+}
+
+BigInteger operator/(const BigInteger& a, const int& b) {
+	BigInteger copy = a;
+	copy /= BigInteger(b);
+	return copy;
+}
+
+BigInteger operator%(const BigInteger& a, const int& b) {
+	BigInteger copy = a;
+	copy %= BigInteger(b);
+	return copy;
+}
+
+BigInteger gcd(BigInteger a, BigInteger b) {
+	if (a < 0) {
+		a *= -1;
+	}
+	if (b < 0) {
+		b *= -1;
+	}
+	while (a && b) {
+		if (a > b)a %= b;
+		else b %= a;
+	}
+	a += b;
+	return a;
+}
+
+class Rational {
+private:
+	BigInteger nominator = 0;
+	BigInteger denominator = 1;
+
+public:
+
+	Rational();
+	~Rational();
+	Rational(const BigInteger& a) {
+		nominator = a;
+		denominator = 1;
+	}
+	Rational(const int& a) {
+		nominator = a;
+		denominator = 1;
+	}
+
+	Rational& operator=(const Rational a) {
+		nominator = a.nominator;
+		denominator = a.denominator;
+		return *this;
+	}
+	Rational& operator=(const BigInteger a) {
+		nominator = a;
+		denominator = 1;
+		return *this;
+	}
+	Rational& operator=(const int a) {
+		nominator = a;
+		denominator = 1;
+		return *this;
+	}
+
+	Rational& operator+=(const Rational& a) {
+		nominator = nominator * a.denominator + denominator * a.nominator;
+		denominator = denominator * a.denominator;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator+=(const BigInteger& a) {
+		nominator = nominator + denominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator+=(const int& a) {
+		nominator = nominator + denominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+
+	Rational& operator-=(const Rational& a) {
+		nominator = nominator * a.denominator - denominator * a.nominator;
+		denominator = denominator * a.denominator;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator-=(const BigInteger& a) {
+		nominator = nominator - denominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator-=(const int& a) {
+		nominator = nominator - denominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+
+	Rational& operator*=(const Rational& a) {
+		nominator = nominator * a.nominator;
+		denominator = denominator * a.denominator;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator*=(const BigInteger& a) {
+		nominator = nominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator*=(const int& a) {
+		nominator = nominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+
+	Rational& operator/=(const Rational& a) {
+		nominator = nominator * a.denominator;
+		denominator = denominator * a.nominator;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator/=(const BigInteger& a) {
+		denominator = denominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+	Rational& operator/=(const int& a) {
+		denominator = denominator * a;
+		BigInteger g = gcd(denominator, nominator);
+		nominator = nominator / g;
+		denominator = denominator / g;
+		if (denominator < 0) {
+			nominator *= -1;
+			denominator *= -1;
+		}
+		return *this;
+	}
+
+	friend std::ostream& operator <<(std::ostream& out, const Rational& s) {
+		out << s.nominator;
+		if (s.denominator != 1 && s.nominator != 0)out << '/' << s.denominator;
+		return out;
+	}
+	friend std::istream& operator >>(std::istream& in, Rational& s) {
+		in >> s.nominator;
+		return in;
+	}
+	friend bool operator==(const Rational&, const Rational&);
+	friend bool operator!=(const Rational&, const Rational&);
+	friend bool operator>(const Rational&, const Rational&);
+	friend bool operator<(const Rational&, const Rational&);
+	friend bool operator>=(const Rational&, const Rational&);
+	friend bool operator<=(const Rational&, const Rational&);
+	friend bool operator==(const Rational&, const int&);
+	friend bool operator!=(const Rational&, const int&);
+	friend bool operator>(const Rational&, const int&);
+	friend bool operator<(const Rational&, const int&);
+	friend bool operator>=(const Rational&, const int&);
+	friend bool operator<=(const Rational&, const int&);
+	friend bool operator==(const BigInteger&, const Rational&);
+	friend bool operator!=(const BigInteger&, const Rational&);
+	friend bool operator>(const BigInteger&, const Rational&);
+	friend bool operator<(const BigInteger&, const Rational&);
+	friend bool operator>=(const BigInteger&, const Rational&);
+	friend bool operator<=(const BigInteger&, const Rational&);
+	friend bool operator==(const int&, const Rational&);
+	friend bool operator!=(const int&, const Rational&);
+	friend bool operator>(const int&, const Rational&);
+	friend bool operator<(const int&, const Rational&);
+	friend bool operator>=(const int&, const Rational&);
+	friend bool operator<=(const int&, const Rational&);
+	friend bool operator==(const Rational&, const BigInteger&);
+	friend bool operator!=(const Rational&, const BigInteger&);
+	friend bool operator>(const Rational&, const BigInteger&);
+	friend bool operator<(const Rational&, const BigInteger&);
+	friend bool operator==(const Rational&, const BigInteger&);
+	friend bool operator>=(const Rational&, const BigInteger&);
+	friend bool operator<=(const Rational&, const BigInteger&);
+	friend Rational operator/(const BigInteger& b, const Rational& a);
+	friend Rational operator/(const int& b, const Rational& a);
+
+	string toString() {
+		string copy;
+		BigInteger x = nominator;
+		if (x < 0) {
+			copy += "-";
+			x *= -1;
+		}
+		if (x == 0) {
+			copy += "0";
+			return copy;
+		}
+		else {
+			string str = x.toString();
+			copy += str;
+			if (denominator == 1) {
+				return copy;
+			}
+			else {
+				BigInteger x = denominator;
+				copy += "/";
+				string str = x.toString();
+				copy += str;
+				return copy;
+			}
+		}
+	}
+
+	string toString() const {
+		string copy;
+		BigInteger x = nominator;
+		if (x < 0) {
+			copy += "-";
+			x *= -1;
+		}
+		if (x == 0) {
+			copy += "0";
+			return copy;
+		}
+		else {
+			string str = x.toString();
+			copy += str;
+			if (denominator == 1) {
+				return copy;
+			}
+			else {
+				BigInteger x = denominator;
+				copy += "/";
+				string str = x.toString();
+				copy += str;
+				return copy;
+			}
+		}
+	}
+
+	string asDecimal(size_t precision = 0) {
+		BigInteger a = nominator / denominator;
+		BigInteger b = nominator % denominator;
+		BigInteger c = denominator;
+		string copy;
+		if (nominator < 0) copy = "-"; else copy = "";
+		string ccopy = a.toString();
+		if (nominator < 0) copy = "-"; else copy = "";
+		copy += ccopy;
+		if (precision == 0) {
+			return copy;
+		}
+		else {
+			precision++;
+			copy += ".";
+			for (size_t i = 0; i < precision; ++i) {
+				a = b * 10;
+				b = a % c;
+				a /= c;
+				if (a < 0) a *= -1;
+				int j;
+				for (j = 0; j < 10; j++)if (j == a)break;
+				copy.push_back(char(j + 48));
+			}
+			if (int(copy.back()) - 48 >= 5) {
+				copy.pop_back();
+				int i = copy.size() - 1;
+				while (true) {
+					if (copy[i] != '9') {
+						copy[i] = char(int(copy[i]) + 1);
+						break;
+					}
+					copy[i] = '0';
+					i--;
+					if (copy[i] == '.')break;
+				}
+				if (copy[i] == '.')copy = (nominator / denominator + 1).toString();
+				return copy;
+			}
+			else {
+				copy.pop_back();
+				return copy;
+			}
+		}
+	}
+
+	string asDecimal(size_t precision = 0) const {
+		BigInteger a = nominator / denominator;
+		BigInteger b = nominator % denominator;
+		BigInteger c = denominator;
+		string copy;
+		if (nominator < 0) copy = "-"; else copy = "";
+		string ccopy = a.toString();
+		if (nominator < 0) copy = "-"; else copy = "";
+		copy += ccopy;
+		if (precision == 0) {
+			return copy;
+		}
+		else {
+			precision++;
+			copy += ".";
+			for (size_t i = 0; i < precision; ++i) {
+				a = b * 10;
+				b = a % c;
+				a /= c;
+				if (a < 0) a *= -1;
+				int j;
+				for (j = 0; j < 10; j++)if (j == a)break;
+				copy.push_back(char(j + 48));
+			}
+			if (int(copy.back()) - 48 >= 5) {
+				copy.pop_back();
+				int i = copy.size() - 1;
+				while (true) {
+					if (copy[i] != '9') {
+						copy[i] = char(int(copy[i]) + 1);
+						break;
+					}
+					copy[i] = '0';
+					i--;
+					if (copy[i] == '.')break;
+				}
+				if (copy[i] == '.')copy = (nominator / denominator + 1).toString();
+				return copy;
+			}
+			else {
+				copy.pop_back();
+				return copy;
+			}
+		}
+	}
+
+	Rational& operator-() {
+		nominator *= -1;
+		return *this;
+	}
+
+	explicit operator double() const {
+		int f = 1;
+		if ((nominator < 0 && denominator > 0) || (nominator > 0 && denominator < 0)) {
+			f = -1;
+		}
+		string copy = asDecimal(310);
+		size_t start = copy.find(".");
+		double k = 1, sum = 0;
+		for (int i = start - 1; i >= 0; i--) {
+			char c = copy[i];
+			double x = int(c) - 48;
+			sum = sum + x * k;
+			k = k * 10;
+		}
+		k = 0.1;
+		for (size_t i = start + 1; i <= 307; i++) {
+			char c = copy[i];
+			double x = int(c) - 48;
+			sum = sum + x * k;
+			k = k / 10;
+		}
+		//	cerr << "sum     " << sum * f << endl;
+		sum *= f;
+		return sum;
+	}
+
+};
+
+Rational::Rational() {
+	nominator = 0;
+	denominator = 1;
+}
+
+Rational::~Rational() {
+
+}
+
+Rational operator+(const Rational& a, const Rational& b) {
+	Rational copy = a;
+	copy += b;
+	return copy;
+}
+
+Rational operator+(const Rational& a, const BigInteger& b) {
+	Rational copy = a;
+	copy += b;
+	return copy;
+}
+
+Rational operator+(const Rational& a, const int& b) {
+	Rational copy = a;
+	copy += b;
+	return copy;
+}
+
+Rational operator+(const BigInteger& b, const Rational& a) {
+	Rational copy = a;
+	copy += b;
+	return copy;
+}
+
+Rational operator+(const int& b, const Rational& a) {
+	Rational copy = a;
+	copy += b;
+	return copy;
+}
+
+Rational operator-(const Rational& a, const Rational& b) {
+	Rational copy = a;
+	copy -= b;
+	return copy;
+}
+
+Rational operator-(const Rational& a, const BigInteger& b) {
+	Rational copy = a;
+	copy -= b;
+	return copy;
+}
+
+Rational operator-(const Rational& a, const int& b) {
+	Rational copy = a;
+	copy -= b;
+	return copy;
+}
+
+Rational operator-(const BigInteger& b, const Rational& a) {
+	Rational copy = a;
+	copy *= -1;
+	copy += b;
+	return copy;
+}
+
+Rational operator-(const int& b, const Rational& a) {
+	Rational copy = a;
+	copy *= -1;
+	copy += b;
+	return copy;
+}
+
+Rational operator*(const Rational& a, const Rational& b) {
+	Rational copy = a;
+	copy *= b;
+	return copy;
+}
+
+Rational operator*(const Rational& a, const BigInteger& b) {
+	Rational copy = a;
+	copy *= b;
+	return copy;
+}
+
+Rational operator*(const Rational& a, const int& b) {
+	Rational copy = a;
+	copy *= b;
+	return copy;
+}
+
+Rational operator*(const BigInteger& b, const Rational& a) {
+	Rational copy = a;
+	copy *= b;
+	return copy;
+}
+
+Rational operator*(const int& b, const Rational& a) {
+	Rational copy = a;
+	copy *= b;
+	return copy;
+}
+
+Rational operator/(const Rational& a, const Rational& b) {
+	Rational copy = a;
+	copy /= b;
+	return copy;
+}
+
+Rational operator/(const Rational& a, const BigInteger& b) {
+	Rational copy = a;
+	copy /= b;
+	return copy;
+}
+
+Rational operator/(const Rational& a, const int& b) {
+	Rational copy = a;
+	copy /= b;
+	return copy;
+}
+
+Rational operator/(const BigInteger& b, const Rational& a) {
+	Rational copy;
+	copy.nominator = a.denominator;
+	copy.denominator = a.nominator;
+	copy *= b;
+	BigInteger g = gcd(copy.denominator, copy.nominator);
+	copy.nominator /= g;
+	copy.denominator /= g;
+	return copy;
+}
+
+Rational operator/(const int& b, const Rational& a) {
+	Rational copy;
+	copy.nominator = a.denominator;
+	copy.denominator = a.nominator;
+	copy *= b;
+	BigInteger g = gcd(copy.denominator, copy.nominator);
+	copy.nominator /= g;
+	copy.denominator /= g;
+	return copy;
+}
+
+bool operator==(const Rational& a, const Rational& b) {
+	return (a.nominator == b.nominator && a.denominator == b.denominator);
+}
+
+bool operator==(const Rational& a, const BigInteger& b) {
+	return (a.nominator == b && a.denominator == 1);
+}
+
+bool operator==(const Rational& a, const int& b) {
+	return (a.nominator == b && a.denominator == 1);
+}
+
+bool operator==(const BigInteger& b, const Rational& a) {
+	return (a.nominator == b && a.denominator == 1);
+}
+
+bool operator==(const int& b, const Rational& a) {
+	return (a.nominator == b && a.denominator == 1);
+}
+
+bool operator!=(const Rational& a, const Rational& b) {
+	return !(a.nominator == b.nominator && a.denominator == b.denominator);
+}
+
+bool operator!=(const Rational& a, const BigInteger& b) {
+	return !(a.nominator == b && a.denominator == 1);
+}
+
+bool operator!=(const Rational& a, const int& b) {
+	return !(a.nominator == b && a.denominator == 1);
+}
+
+bool operator!=(const BigInteger& b, const Rational& a) {
+	return !(a.nominator == b && a.denominator == 1);
+}
+
+bool operator!=(const int& b, const Rational& a) {
+
+	return !(a.nominator == b && a.denominator == 1);
+}
+
+bool operator>(const Rational& a, const Rational& b) {
+
+	return (a.nominator * b.denominator > a.denominator * b.nominator);
+}
+
+bool operator>(const Rational& a, const BigInteger& b) {
+
+	return (a.nominator > a.denominator * b);
+}
+
+bool operator>(const Rational& a, const int& b) {
+	return (a.nominator > a.denominator * b);
+}
+
+bool operator>(const BigInteger& b, const Rational& a) {
+	return (a.nominator < a.denominator* b);
+}
+
+bool operator>(const int& b, const Rational& a) {
+
+	return (a.nominator < a.denominator* b);
+}
+
+bool operator<(const Rational& a, const Rational& b) {
+	return (a.nominator * b.denominator < a.denominator* b.nominator);
+}
+
+bool operator<(const Rational& a, const BigInteger& b) {
+
+	return (a.nominator < a.denominator* b);
+}
+
+bool operator<(const Rational& a, const int& b) {
+	return (a.nominator < a.denominator* b);
+}
+
+bool operator<(const BigInteger& b, const Rational& a) {
+	return (a.nominator > a.denominator * b);
+}
+
+bool operator<(const int& b, const Rational& a) {
+	return (a.nominator > a.denominator * b);
+}
+
+bool operator>=(const Rational& a, const Rational& b) {
+	return (a.nominator * b.denominator >= a.denominator * b.nominator);
+}
+
+bool operator>=(const Rational& a, const BigInteger& b) {
+	return (a.nominator >= a.denominator * b);
+}
+
+bool operator>=(const Rational& a, const int& b) {
+	return (a.nominator >= a.denominator * b);
+}
+
+bool operator>=(const BigInteger& b, const Rational& a) {
+	return (a.nominator <= a.denominator * b);
+}
+
+bool operator>=(const int& b, const Rational& a) {
+	return (a.nominator <= a.denominator * b);
+}
+
+bool operator<=(const Rational& a, const Rational& b) {
+	return (a.nominator * b.denominator <= a.denominator * b.nominator);
+}
+
+bool operator<=(const Rational& a, const BigInteger& b) {
+	return (a.nominator <= a.denominator * b);
+}
+
+bool operator<=(const Rational& a, const int& b) {
+	return (a.nominator <= a.denominator * b);
+}
+
+bool operator<=(const BigInteger& b, const Rational& a) {
+	return (a.nominator >= a.denominator * b);
+}
+
+bool operator<=(const int& b, const Rational& a) {
+	return (a.nominator >= a.denominator * b);
+}
+
+template <typename U, typename V>
+struct is_samee {
+	static const bool value = false;
+};
+
+template <typename U>
+struct is_samee<U, U> {
+	static const bool value = true;
+};
+
+template <int n>
+class Finite {
+private:
+	long long m;
+	long long bin_pow(long long base, long long p) {
+		if (p == 1)
+			return base;
+		if (p % 2 == 0) {
+			long long t = bin_pow(base, p / 2);
+			return (t * t) % n;
+		}
+		else return (bin_pow(base, p - 1) * base) % n;
+	}
+
+	long long inverse_element(Finite x) {
+		return bin_pow(x.m, n - 2);
+	}
+public:
+	Finite() = default;
+	Finite(long long x) {
+		m = x % n;
+		if (m < 0)m += n;
+		////cerr << m << ' ';
+	}
+	friend std::ostream& operator <<(std::ostream& out, const Finite<n>& s) {
+		out << s.m;
+		return out;
+	}
+	friend std::istream& operator >> (std::istream& in, Finite<n>& s) {
+		in >> s.m;
+		return in;
+	}
+	operator double() const {
+		double res = m;
+		return res;
+	}
+	Finite& operator--() {
+		//cerr << "-- ";
+		m--;
+		m %= n;
+		if (m < 0)m += n;
+		return *this;
+	}
+
+	Finite operator--(int) {
+		//cerr << "--int ";
+		Finite copy = *this;
+		--(*this);
+		return copy;
+	}
+	Finite& operator++() {
+		//	//cerr << "++ ";
+		m++;
+		m %= n;
+		return *this;
+	}
+
+	Finite operator++(int) {
+		////cerr << "++int ";
+		Finite copy = *this;
+		++(*this);
+		return copy;
+	}
+	Finite& operator += (const Finite<n>& a) {
+		//cerr << "+= ";
+		m = (m + a.m) % n;
+		return *this;
+	}
+	Finite& operator -= (const Finite<n>& a) {
+		//cerr << "-= ";
+		m = (n + m - a.m) % n;
+		return *this;
+	}
+	Finite& operator *= (const Finite<n>& a) {
+		//cerr << "*= ";
+		m = (m * a.m) % n;
+		return *this;
+	}
+
+	Finite& operator /= (const Finite<n>& a) {
+		//cerr << "/= " << a.m << ' ';
+		m = (m * inverse_element(a)) % n;
+		return *this;
+	}
+
+	bool operator==(const Finite<n>& a) const {
+		return (a.m == m);
+	}
+
+	bool operator!=(const Finite<n>& a) const {
+		return (a.m != m);
+	}
+
+	bool operator< (const Finite<n>& a) const {
+		return m < a.m;
+	}
+
+	bool operator> (const Finite<n>& a) const {
+		return m > a.m;
+	}
+
+	Finite& operator-() {
+		//cerr << "u- ";
+		m = n - m;
+		return *this;
+	}
+
+	Finite <n> operator==(const Finite <n>& a) {
+		return (a.m == m);
+	}
+
+	Finite <n> operator==(const int& a) {
+		auto copy = Finite <n>(a);
+		return (copy.m == m);
+	}
+
+	Finite <n> operator!=(const Finite <n>& a) {
+		return (a.m != m);
+	}
+
+	Finite <n> operator!=(const int& a) {
+		auto copy = Finite <n>(a);
+		return (copy.m != m);
+	}
+};
+
+template <typename T>
+struct r_c {
+	using type = T;
+};
+
+template <typename T>
+struct r_c<const T> {
+	using type = T;
+};
+
+template <int n>
+Finite<n> operator + (const Finite<n>& a, const Finite <n>& b) {
+	//cerr << "+ab ";
+	Finite<n> copy = a;
+	copy += b;
+	return copy;
+}
+
+template <int n>
+Finite<n> operator - (const Finite<n>& a, const Finite <n>& b) {
+	//cerr << "-ab ";
+	Finite<n> copy = a;
+	copy -= b;
+	return copy;
+}
+
+template <int n>
+Finite<n> operator * (const Finite<n>& a, const Finite <n>& b) {
+	//cerr << "*ab ";
+	Finite<n> copy = a;
+	copy *= b;
+	return copy;
+}
+
+template <int n>
+Finite<n> operator / (const Finite<n>& a, const Finite <n>& b) {
+	//cerr << "/ab " << b << ' ';
+	Finite<n> copy = a;
+	copy /= b;
+	return copy;
+}
+
+template <unsigned M, unsigned N, typename Field = Rational>
+class Matrix {
+public:
+	~Matrix() {
+		t.clear();
+	}
+
+	Matrix() = default;
+
+	template <typename T = Field>
+	Matrix(vector <vector<T>> a) {
+		cerr << "UMTa" << endl;
+		t.assign(M, vector <Field>(N));
+		for (unsigned i = 0; i < M; i++)
+			for (unsigned j = 0; j < N; j++)t[i][j] = Field(a[i][j]);
+		m = a.size();
+		n = a[0].size();
+	}
+
+	template <int>
+	Matrix(vector <vector<unsigned>> a) {
+		cerr << "UMTint" << endl;
+		t.assign(M, vector <Field>(N));
+		for (unsigned i = 0; i < M; i++)
+			for (unsigned j = 0; j < N; j++)t[i][j] = Field(a[i][j]);
+		m = a.size();
+		n = a[0].size();
+	}
+
+	Matrix& operator+=(const Matrix<M, N, Field>& a) {
+		cerr << "UM+=" << endl;
+		for (unsigned i = 0; i < m; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] += a.t[i][j];
+		return *this;
+	}
+
+	Matrix& operator-=(const Matrix<M, N, Field>& a) {
+		cerr << "UM-= ";
+		cerr << endl;
+		/*for (unsigned i = 0; i < m; i++) {
+			for (unsigned j = 0; j < n; j++)cerr << t[i][j] << ' ';
+			cerr << endl;
+		}
+		cerr << endl;
+		for (unsigned i = 0; i < m; i++) {
+			for (unsigned j = 0; j < n; j++)cerr << a.t[i][j] << ' ';
+			cerr << endl;
+		}*/
+		for (unsigned i = 0; i < m; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] -= a.t[i][j];
+		return *this;
+	}
+
+	Matrix& operator*=(const Field& a) {
+		cerr << "UM*=" << endl;
+		for (unsigned i = 0; i < m; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] *= a;
+		return *this;
+	}
+
+	Matrix<N, M, Field> transposed() const {
+		cerr << "UMtrans" << endl;
+		vector <vector <Field>> v(n, vector <Field>(m));
+		for (unsigned i = 0; i < n; i++) {
+			for (unsigned j = 0; j < m; j++)v[i][j] = t[j][i];
+		}
+		return Matrix<N, M, Field>(v);
+	}
+
+	unsigned rank() const {
+		cerr << "UMrank" << endl;
+		cerr << typeid(Field).name() << endl;
+		vector <vector <Field>> a;
+		if (m < n) {
+			a.assign(n, vector <Field>(m));
+			for (unsigned i = 0; i < n; i++)
+				for (unsigned j = 0; j < m; j++)
+					a[i][j] = t[j][i];
+		}
+		else a = t;
+		for (auto i : t) {
+			//for (auto j : i)cerr << j << ' ';
+			//	cerr << endl;
+		}
+		unsigned n1 = a[0].size(), m1 = a.size();
+		unsigned res = min(n1, m1);
+		vector<bool> used(m1);
+		for (unsigned i = 0; i < n1; i++) {
+			unsigned j;
+			for (j = 0; j < m1; j++)
+				if (!used[j] && a[j][i] != Field(0))
+					break;
+			if (j == m1)
+				res--;
+			else {
+				used[j] = true;
+				for (unsigned p = i + 1; p < n1; p++)
+					a[j][p] /= a[j][i];
+				for (unsigned k = 0; k < m1; k++)
+					if (k != j && a[k][i] != Field(0))
+						for (unsigned p = i + 1; p < n1; p++)
+							a[k][p] -= a[j][p] * a[k][i];
+			}
+		}
+		return res;
+	}
+
+	Field trace() const {
+		cerr << "UMtrace" << endl;
+		Field res = 0;
+		for (unsigned i = 0; i < min(n, m); i++)
+			res += t[i][i];
+		cerr << res << endl;
+		return res;
+	}
+
+	vector <Field>operator[](size_t i) const {
+		return t[i];
+	}
+
+	vector <Field>& operator[](size_t i) {
+		return t[i];
+	}
+
+	vector<Field> getRow(unsigned x) const {
+		return t[x];
+	}
+
+	vector<Field> getColumn(unsigned x) const {
+		vector <Field> res;
+		for (unsigned i = 0; i < m; i++)
+			res.push_back(t[i][x]);
+		return res;
+	}
+
+private:
+	vector <vector<Field>> t;
+	unsigned m, n;
+};
+
+template <unsigned N, typename Field = Rational>
+class SquareMatrix {
+public:
+	~SquareMatrix() {
+		t.clear();
+	}
+	SquareMatrix() {
+		cerr << "SM" << endl;
+		n = N;
+		t.assign(N, vector <Field>(N));
+		for (unsigned i = 0; i < n; i++)t[i][i] = 1;
+	}
+
+	template <typename T = Field>
+	SquareMatrix(vector <vector<T>> a) {
+		cerr << "SMTa" << endl;
+		t.assign(N, vector <Field>(N));
+		for (unsigned i = 0; i < N; i++)
+			for (unsigned j = 0; j < N; j++)t[i][j] = Field(a[i][j]);
+		n = a.size();
+	}
+
+	template <int>
+	SquareMatrix(vector <vector<int>> a) {
+		cerr << "SqMTint" << endl;
+		t.assign(N, vector <Field>(N));
+		for (unsigned i = 0; i < N; i++)
+			for (unsigned j = 0; j < N; j++)t[i][j] = Field(a[i][j]);
+		n = a.size();
+	}
+
+	SquareMatrix& operator+=(const SquareMatrix<N, Field>& a) {
+		cerr << "SM+=" << endl;
+		for (unsigned i = 0; i < n; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] += a[i][j];
+		return *this;
+	}
+
+	SquareMatrix& operator-=(const SquareMatrix<N, Field>& a) {
+		cerr << "SM-=" << endl;
+		for (unsigned i = 0; i < n; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] -= a[i][j];
+		return *this;
+	}
+
+	SquareMatrix& operator*=(const Field& a) {
+		cerr << "SM*=" << endl;
+		for (unsigned i = 0; i < n; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] *= a;
+		return *this;
+	}
+
+	SquareMatrix& operator*= (const SquareMatrix<N, Field>& a) {
+		cerr << "SMF*=" << endl;
+		for (unsigned i = 0; i < N; i++) {
+			for (unsigned j = 0; j < N; j++) {
+				Field sum = 0;
+				for (unsigned r = 0; r < N; r++)sum += t[i][r] * a.t[r][j];
+			}
+		}
+		return *this;
+	}
+
+	Field det() const {
+		cerr << "SMdet" << endl;
+		if (is_same<Field, Rational>::value == false) {
+			double ans = 1;
+			vector <vector <double>> a(N, vector <double>(N));
+			for (unsigned i = 0; i < N; i++) {
+				for (unsigned j = 0; j < N; j++) {
+					double der = double(t[i][j]);
+					a[i][j] = der;
+				}
+			}
+			for (unsigned i = 0; i < n; ++i) {
+				unsigned k = i;
+				for (unsigned j = i + 1; j < n; ++j) {
+					if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+						k = j;
+				}
+				if (a[k][i] == 0) {
+					ans = 0;
+					break;
+				}
+				swap(a[i], a[k]);
+				if (i != k)
+					ans *= -1;
+				ans *= a[i][i];
+				for (unsigned j = i + 1; j < n; ++j)
+					a[i][j] /= a[i][i];
+
+				for (unsigned j = 0; j < n; ++j)
+					if (j != i && a[j][i] != 0)
+						for (unsigned k = i + 1; k < n; ++k)
+							a[j][k] -= a[i][k] * a[j][i];
+			}
+			return Field(int(ans));
+		}
+		for (unsigned i = 0; i < N; i++) {
+			for (unsigned j = 0; j < N; j++)cerr << t[i][j] << ' ';
+			cerr << endl;
+		}
+		Field ans = 1;
+		vector <vector <Field>> a(N, vector <Field>(N));
+		for (unsigned i = 0; i < N; i++) {
+			for (unsigned j = 0; j < N; j++) {
+				a[i][j] = t[i][j];
+			}
+		}
+		for (unsigned i = 0; i < n; ++i) {
+			unsigned k = i;
+			for (unsigned j = i + 1; j < n; ++j) {
+				if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+					k = j;
+			}
+			if (a[k][i] == Field(0)) {
+				ans = Field(0);
+				break;
+			}
+			swap(a[i], a[k]);
+			if (i != k)
+				ans *= -1;
+			ans *= a[i][i];
+			for (unsigned j = i + 1; j < n; ++j)
+				a[i][j] /= a[i][i];
+
+			for (unsigned j = 0; j < n; ++j)
+				if (j != i && a[j][i] != Field(0))
+					for (unsigned k = i + 1; k < n; ++k)
+						a[j][k] -= a[i][k] * a[j][i];
+		}
+		return ans;
+	}
+	SquareMatrix<N, Field> transposed() const {
+		cerr << "SMtrans*=" << endl;
+		vector <vector <Field>> v(n, vector <Field>(n));
+		for (unsigned i = 0; i < n; i++) {
+			for (unsigned j = 0; j < n; j++)v[i][j] = t[j][i];
+		}
+		return SquareMatrix<N, Field>(v);
+	}
+
+	unsigned rank() const {
+		cerr << "SMrank" << endl;
+		auto a = t;
+		unsigned res = n;
+		vector<bool> used(n);
+		for (unsigned i = 0; i < n; i++) {
+			unsigned j;
+			for (j = 0; j < n; j++)
+				if (!used[j] && a[j][i] != 0)
+					break;
+			if (j == n)
+				res--;
+			else {
+				used[j] = true;
+				for (unsigned p = i + 1; p < n; p++)
+					a[j][p] /= a[j][i];
+				for (unsigned k = 0; k < n; k++)
+					if (k != j && a[k][i] != Field(0))
+						for (unsigned p = i + 1; p < n; p++)
+							a[k][p] -= a[j][p] * a[k][i];
+			}
+		}
+		return res;
+	}
+
+	Field trace() const {
+		cerr << "SMrace" << endl;
+		Field res = 0;
+		for (unsigned i = 0; i < n; i++)
+			res += t[i][i];
+		cerr << res << endl;
+		return res;
+	}
+
+	SquareMatrix inverted() {
+		//cerr << "         " << N << endl;
+		cerr << "SMinverted" << endl;
+		Field d = (*this).det();
+		vector <vector <Field>> r;
+		for (unsigned i = 0; i < n; i++) {
+			r.push_back({});
+			for (unsigned j = 0; j < n; j++) {
+				vector <vector <Field>> r1;
+				unsigned tek = 0;
+				for (unsigned k = 0; k < n; k++) {
+					if (i == k)continue;
+					r1.push_back({});
+					for (unsigned l = 0; l < n; l++) {
+						if (j == l)continue;
+						r1[tek].push_back(t[k][l]);
+					}
+					tek++;
+				}
+				Field d1 = det3(r1);
+				cerr << "         " << d << endl;
+				r[i].push_back(d1 / d);
+				if ((i + j) % 2)r[i][j] *= Field(-1);
+			}
+		}
+		for (unsigned i = 0; i < n; i++) {
+			for (unsigned j = i + 1; j < n; j++)swap(r[i][j], r[j][i]);
+		}
+		return SquareMatrix(r);
+	}
+
+	void invert() {
+		cerr << "SMinvert" << endl;
+		*this = (*this).inverted();
+	}
+
+	vector <Field>operator[](size_t i) const {
+		return t[i];
+	}
+
+	vector <Field>& operator[](size_t i) {
+		return t[i];
+	}
+
+	vector<Field> getRow(unsigned x) const {
+		return t[x];
+	}
+
+	vector<Field> getColumn(unsigned x) const {
+		vector <Field> res;
+		for (unsigned i = 0; i < n; i++)
+			res.push_back(t[i][x]);
+		return res;
+	}
+
+private:
+	vector <vector<Field>> t;
+	unsigned n;
+	Field det3(vector <vector <Field>> a1) const {
+		unsigned sz = a1.size();
+		cerr << "UMdet" << endl;
+		if (is_same<Field, Rational>::value == false) {
+			double ans = 1;
+			vector <vector <double>> a(sz, vector <double>(sz));
+			for (unsigned i = 0; i < sz; i++) {
+				for (unsigned j = 0; j < sz; j++) {
+					double der = double(a1[i][j]);
+					a[i][j] = der;
+				}
+			}
+			for (unsigned i = 0; i < sz; ++i) {
+				unsigned k = i;
+				for (unsigned j = i + 1; j < sz; ++j) {
+					if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+						k = j;
+				}
+				if (a[k][i] == 0) {
+					ans = 0;
+					break;
+				}
+				swap(a[i], a[k]);
+				if (i != k)
+					ans *= -1;
+				ans *= a[i][i];
+				for (unsigned j = i + 1; j < sz; ++j)
+					a[i][j] /= a[i][i];
+
+				for (unsigned j = 0; j < sz; ++j)
+					if (j != i && a[j][i] != 0)
+						for (unsigned k = i + 1; k < sz; ++k)
+							a[j][k] -= a[i][k] * a[j][i];
+			}
+			int a2 = round(ans);
+			cerr << "                        ans" << ans << ' ' << a2 << ' ' << endl;
+			return Field(a2);
+		}
+		Field ans = 1;
+		vector <vector <Field>> a(sz, vector <Field>(sz));
+		for (unsigned i = 0; i < sz; i++) {
+			for (unsigned j = 0; j < sz; j++) {
+				a[i][j] = a1[i][j];
+			}
+		}
+		for (unsigned i = 0; i < sz; ++i) {
+			unsigned k = i;
+			for (unsigned j = i + 1; j < sz; ++j) {
+				if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+					k = j;
+			}
+			if (a[k][i] == Field(0)) {
+				ans = Field(0);
+				break;
+			}
+			swap(a[i], a[k]);
+			if (i != k)
+				ans *= -1;
+			ans *= a[i][i];
+			for (unsigned j = i + 1; j < sz; ++j)
+				a[i][j] /= a[i][i];
+
+			for (unsigned j = 0; j < sz; ++j)
+				if (j != i && a[j][i] != Field(0))
+					for (unsigned k = i + 1; k < sz; ++k)
+						a[j][k] -= a[i][k] * a[j][i];
+		}
+		return ans;
+	}
+};
+
+template <unsigned N, typename Field = Rational>
+SquareMatrix<N, Field> operator+(const SquareMatrix<N, Field>& a, const SquareMatrix<N, Field>& b) {
+	cerr << "SMSM+ ";
+	SquareMatrix<N, Field> copy = a;
+	copy += b;
+	return copy;
+}
+
+template <unsigned N, typename Field = Rational>
+SquareMatrix<N, Field> operator-(const SquareMatrix<N, Field>& a, const SquareMatrix<N, Field>& b) {
+	cerr << "SMSM- ";
+	SquareMatrix<N, Field> copy = a;
+	copy -= b;
+	return copy;
+}
+
+template <unsigned N, typename Field = Rational>
+SquareMatrix<N, Field> operator*(const Field& a, const SquareMatrix<N, Field>& b) {
+	cerr << "F*SM" << endl;
+	SquareMatrix<N, Field> copy = b;
+	copy *= a;
+	return copy;
+}
+
+template <unsigned N, typename Field = Rational>
+SquareMatrix<N, Field> operator*(const SquareMatrix<N, Field>& a, const Field& b) {
+	cerr << "SM*F" << endl;
+	SquareMatrix<N, Field> copy = a;
+	copy *= b;
+	return copy;
+}
+
+template <unsigned N, typename Field = Rational>
+SquareMatrix<N, Field> operator* (const SquareMatrix<N, Field>& a, const SquareMatrix<N, Field>& b) {
+	cerr << "SM*SM" << endl;
+	vector <vector <Field>> res(N, vector <Field>(N));
+	for (unsigned i = 0; i < N; i++) {
+		for (unsigned j = 0; j < N; j++) {
+			for (unsigned r = 0; r < N; r++)res[i][j] += a[i][r] * b[r][j];
+		}
+	}
+	return SquareMatrix<N, Field>(res);
+}
+
+template <unsigned N, typename Field>
+class Matrix<N, N, Field> {
+public:
+	~Matrix() {
+		t.clear();
+	}
+
+	Matrix() {
+		cerr << "M" << endl;
+		n = N;
+		t.assign(n, vector <Field>(n));
+		for (unsigned i = 0; i < n; i++)t[i][i] = 1;
+	}
+
+	template <typename T = Field>
+	Matrix(vector <vector<T>> a) {
+		cerr << "MTa"<<endl;
+		t.assign(N, vector <Field>(N));
+		for (unsigned i = 0; i < N; i++)
+			for (unsigned j = 0; j < N; j++)t[i][j] = Field(a[i][j]);
+		n = a[0].size();
+	}
+
+	template <int>
+	Matrix(vector <vector<int>> a) {
+		cerr << "MTint" << endl;
+		t.assign(N, vector <Field>(N));
+		for (unsigned i = 0; i < N; i++) {
+			for (unsigned j = 0; j < N; j++) {
+				t[i][j] = a[i][j];
+			
+			}
+			
+		}
+		n = a[0].size();
+	}
+
+	Matrix& operator+=(const Matrix<N, N, Field>& a) {
+		cerr << "M+=" << endl;
+		for (unsigned i = 0; i < n; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] += a[i][j];
+		return *this;
+	}
+
+	Matrix& operator-=(const Matrix<N, N, Field>& a) {
+		cerr << "M-=" << endl;
+		for (unsigned i = 0; i < n; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] -= a[i][j];
+		return *this;
+	}
+
+	Matrix& operator*=(const Field& a) {
+		cerr << "M*=F" << endl;
+		for (unsigned i = 0; i < n; i++)
+			for (unsigned j = 0; j < n; j++)t[i][j] *= a;
+		return *this;
+	}
+
+	Matrix& operator*= (const Matrix<N, N, Field>& a) {
+		cerr << "M*=" << endl;
+		for (unsigned i = 0; i < N; i++) {
+			for (unsigned j = 0; j < N; j++) {
+				Field sum = 0;
+				for (unsigned r = 0; r < N; r++)sum += t[i][r] * a.t[r][j];
+			}
+		}
+		return *this;
+	}
+
+	Field det() const {
+		cerr << "Mdet" << endl;
+		if (is_samee<Field, Rational>::value == false) {
+			double ans = 1;
+			vector <vector <double>> a(N, vector <double>(N));
+			for (unsigned i = 0; i < N; i++) {
+				for (unsigned j = 0; j < N; j++) {
+					//double der = double(t[i][j]);
+					a[i][j] = double(t[i][j]);
+				}
+			}
+			for (unsigned i = 0; i < n; ++i) {
+				unsigned k = i;
+				for (unsigned j = i + 1; j < n; ++j)
+					if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+						k = j;
+				if (a[k][i] == Field(0)) {
+					ans = Field(0);
+					break;
+				}
+				swap(a[i], a[k]);
+				if (i != k)
+					ans *= -1;
+				ans *= a[i][i];
+				for (unsigned j = i + 1; j < n; ++j)
+					a[i][j] /= a[i][i];
+
+				for (unsigned j = 0; j < n; ++j)
+					if (j != i && a[j][i] != Field(0))
+						for (unsigned k = i + 1; k < n; ++k)
+							a[j][k] -= a[i][k] * a[j][i];
+			}
+			return Field(int(ans));
+		}
+		else {
+			Field ans = 1;
+			vector <vector <Field>> a(N, vector <Field>(N));
+			for (unsigned i = 0; i < N; i++) {
+				for (unsigned j = 0; j < N; j++) {
+					a[i][j] = t[i][j];
+				}
+			}
+			for (unsigned i = 0; i < n; ++i) {
+				unsigned k = i;
+				for (unsigned j = i + 1; j < n; ++j) {
+					if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+						k = j;
+				}
+				if (a[k][i] == Field(0)) {
+					ans = Field(0);
+					break;
+				}
+				swap(a[i], a[k]);
+				if (i != k)
+					ans *= -1;
+				ans *= a[i][i];
+				for (unsigned j = i + 1; j < n; ++j)
+					a[i][j] /= a[i][i];
+
+				for (unsigned j = 0; j < n; ++j)
+					if (j != i && a[j][i] != Field(0))
+						for (unsigned k = i + 1; k < n; ++k)
+							a[j][k] -= a[i][k] * a[j][i];
+			}
+			return ans;
+		}
+	}
+
+	Matrix<N, N, Field> transposed() const {
+		cerr << "Mtrans" << endl;
+		vector <vector <Field>> v(n, vector <Field>(n));
+		for (unsigned i = 0; i < n; i++) {
+			for (unsigned j = 0; j < n; j++)v[i][j] = t[j][i];
+		}
+		return Matrix<N, N, Field>(v);
+	}
+
+	unsigned rank() const {
+		cerr << "Mrank" << endl;
+		auto a = t;
+		unsigned res = n;
+		vector<bool> used(n);
+		for (unsigned i = 0; i < n; i++) {
+			unsigned j;
+			for (j = 0; j < n; j++)
+				if (!used[j] && a[j][i] != Field(0))
+					break;
+			if (j == n)
+				res--;
+			else {
+				used[j] = true;
+				for (unsigned p = i + 1; p < n; p++)
+					a[j][p] /= a[j][i];
+				for (unsigned k = 0; k < n; k++)
+					if (k != j && a[k][i] != Field(0))
+						for (unsigned p = i + 1; p < n; p++)
+							a[k][p] -= a[j][p] * a[k][i];
+			}
+		}
+		return res;
+	}
+
+	Field trace() const {
+		cerr << "Mtrace" << endl;
+		Field res = 0;
+		for (unsigned i = 0; i < n; i++)
+			res += t[i][i];
+		cerr << res << endl;
+		return res;
+	}
+
+	Matrix inverted() const {
+		cerr << "Minverted" << endl;
+		Field d = (*this).det();
+		cout << "                             " << d << endl;
+		vector <vector <Field>> r;
+		for (unsigned i = 0; i < n; i++) {
+			r.push_back({});
+			for (unsigned j = 0; j < n; j++) {
+				vector <vector <Field>> r1;
+				unsigned tek = 0;
+				for (unsigned k = 0; k < n; k++) {
+					if (i == k)continue;
+					r1.push_back({});
+					for (unsigned l = 0; l < n; l++) {
+						if (j == l)continue;
+						r1[tek].push_back(t[k][l]);
+					}
+					tek++;
+				}
+				Field d1 = det3(r1), w;
+				w = d1 / d;
+				r[i].push_back(w);
+				//cerr << "                     " << d1 << ' ' << d << ' ' << d1 / d << ' ' << endl;
+				//cerr << r[i][j] << ' ' << r[i][j] * -1 << endl;
+				if ((i + j) % 2) {
+					r[i][j] *= Field(-1);
+				}
+			}
+			cerr << "                   ";
+			for (unsigned l = 0; l < n; l++) {
+				Field sum(0);
+				for (unsigned j = 0; j < n; j++) {
+					sum += r[i][j] * t[l][j];
+				}
+				cerr << sum << ' ';
+			}
+			cerr << endl;
+		}
+		for (unsigned i = 0; i < n; i++) {
+			for (unsigned j = i + 1; j < n; j++)swap(r[i][j], r[j][i]);
+		}
+		for (unsigned i = 0; i < n; i++) {
+			for (unsigned j = 0; j < n; j++)cerr << r[i][j] << ' ';
+			cerr << endl;
+		}
+		return Matrix<N, N, Field>(r);
+	}
+
+	void invert() {
+		cerr << "Minvert" << endl;
+		*this = (*this).inverted();
+	}
+
+	vector <Field>operator[](size_t i) const {
+		return t[i];
+	}
+
+	vector <Field>& operator[](size_t i) {
+		return t[i];
+	}
+
+	vector<Field> getRow(unsigned x) const {
+		cerr << "getRow" << endl;
+		return t[x];
+	}
+
+	vector<Field> getColumn(unsigned x) const {
+		cerr << "getCol" << endl;
+		vector <Field> res;
+		for (unsigned i = 0; i < n; i++)
+			res.push_back(t[i][x]);
+		return res;
+	}
+
+private:
+	vector <vector<Field>> t;
+	unsigned n;
+	Field det3(vector <vector <Field>> a1) const {
+		unsigned sz = a1.size();
+		for (auto i : a1) {
+			for (auto j : i)cout << j << ' ';
+			cout << endl;
+		}
+		cerr << "UMdet" << endl;
+		if (is_same<Field, Rational>::value == false) {
+			double ans = 1;
+			vector <vector <double>> a(sz, vector <double>(sz));
+			for (unsigned i = 0; i < sz; i++) {
+				for (unsigned j = 0; j < sz; j++) {
+					double der = double(a1[i][j]);
+					a[i][j] = der;
+				}
+			}
+			for (unsigned i = 0; i < sz; ++i) {
+				unsigned k = i;
+				for (unsigned j = i + 1; j < sz; ++j) {
+					if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+						k = j;
+				}
+				if (a[k][i] == 0) {
+					ans = 0;
+					break;
+				}
+				swap(a[i], a[k]);
+				if (i != k)
+					ans *= -1;
+				ans *= a[i][i];
+				for (unsigned j = i + 1; j < sz; ++j)
+					a[i][j] /= a[i][i];
+
+				for (unsigned j = 0; j < sz; ++j)
+					if (j != i && a[j][i] != 0)
+						for (unsigned k = i + 1; k < sz; ++k)
+							a[j][k] -= a[i][k] * a[j][i];
+			}
+			int a2 = round(ans);
+			cerr << "                        ans" << ans << ' ' << a2 << ' ' << endl;
+			return Field(a2);
+		}
+		Field ans = 1;
+		vector <vector <Field>> a(sz, vector <Field>(sz));
+		for (unsigned i = 0; i < sz; i++) {
+			for (unsigned j = 0; j < sz; j++) {
+				a[i][j] = a1[i][j];
+			}
+		}
+		for (unsigned i = 0; i < sz; ++i) {
+			unsigned k = i;
+			for (unsigned j = i + 1; j < sz; ++j) {
+				if (a[j][i] * a[j][i] > a[k][i] * a[k][i])
+					k = j;
+			}
+			if (a[k][i] == Field(0)) {
+				ans = Field(0);
+				break;
+			}
+			swap(a[i], a[k]);
+			if (i != k)
+				ans *= -1;
+			ans *= a[i][i];
+			for (unsigned j = i + 1; j < sz; ++j)
+				a[i][j] /= a[i][i];
+
+			for (unsigned j = 0; j < sz; ++j)
+				if (j != i && a[j][i] != Field(0))
+					for (unsigned k = i + 1; k < sz; ++k)
+						a[j][k] -= a[i][k] * a[j][i];
+		}
+		return ans;
+	}
+};
+
+template <unsigned M, unsigned N, typename Field = Rational>
+Matrix<M, N, Field> operator+(const Matrix<M, N, Field>& a, const Matrix<M, N, Field>& b) {
+	cerr << "MM+" << endl;
+	Matrix<M, N, Field> copy = a;
+	copy += b;
+	return copy;
+}
+
+template <unsigned M, unsigned N, typename Field = Rational>
+Matrix<M, N, Field> operator-(const Matrix<M, N, Field>& a, const Matrix<M, N, Field>& b) {
+	cerr << "MM- ";
+	cerr << typeid(Field).name() << endl;
+	Matrix<M, N, Field> copy = a;
+	copy -= b;
+	auto r = copy + b;
+	return copy;
+}
+
+template <unsigned M, unsigned N, typename Field = Rational>
+Matrix<M, N, Field> operator*(const Field& a, const Matrix<M, N, Field>& b) {
+	cerr << "FM* ";
+	Matrix<M, N, Field> copy = b;
+	copy *= a;
+	return copy;
+}
+
+template <unsigned M, unsigned N, typename Field = Rational>
+Matrix<M, N, Field> operator*(const Matrix<M, N, Field>& a, const Field& b) {
+	cerr << "MF* ";
+	Matrix<M, N, Field> copy = a;
+	copy *= b;
+	return copy;
+}
+
+
+template <unsigned K, unsigned M, unsigned N, typename Field = Rational>
+Matrix<M, K, Field> operator* (const Matrix<M, N, Field>& a, const Matrix<N, K, Field>& b) {
+	cerr << "MM* ";
+	vector <vector <Field>> res(M, vector <Field>(K));
+	for (unsigned i = 0; i < M; i++) {
+		for (unsigned j = 0; j < K; j++) {
+			for (unsigned r = 0; r < N; r++)res[i][j] += a[i][r] * b[r][j];
+		}
+	}
+	return Matrix<M, K, Field>(res);
+}
+
+template <unsigned M1, unsigned N1, typename Field1 = Rational, unsigned M2, unsigned N2, typename Field2 = Rational>
+bool operator== (const Matrix<M1, N1, Field1>& a, const Matrix<M2, N2, Field2>& b) {
+	if (M1 != M2 || N1 != N2)return false;
+	for (unsigned i = 0; i < M1; i++) {
+		for (unsigned j = 0; j < N2; j++)if (a[i][j] != b[i][j])return false;
+	}
+	return true;
+}
+
+template <unsigned M1, unsigned N1, typename Field1 = Rational, unsigned M2, unsigned N2, typename Field2 = Rational>
+bool operator!= (const Matrix<M1, N1, Field1>& a, const Matrix<M2, N2, Field2>& b) {
+	return !(a == b);
+}
+
+template <unsigned N1, typename Field1 = Rational, unsigned N2, typename Field2 = Rational>
+bool operator== (const SquareMatrix<N1, Field1>& a, const SquareMatrix<N2, Field2>& b) {
+	if (N1 != N2)return false;
+	for (unsigned i = 0; i < N1; i++) {
+		for (unsigned j = 0; j < N1; j++)if (a[i][j] != b[i][j])return false;
+	}
+	return true;
+}
+
+template <unsigned N1, typename Field1 = Rational, unsigned N2, typename Field2 = Rational>
+bool operator!= (const SquareMatrix<N1, Field1>& a, const SquareMatrix<N2, Field2>& b) {
+	return !(a == b);
+}
+
+template <unsigned M1, unsigned N1, typename Field1 = Rational, unsigned N2, typename Field2 = Rational>
+bool operator== (const Matrix<M1, N1, Field1>& a, const SquareMatrix<N2, Field2>& b) {
+	if (M1 != N2 || N1 != N2)return false;
+	for (unsigned i = 0; i < M1; i++) {
+		for (unsigned j = 0; j < N2; j++)if (a[i][j] != b[i][j])return false;
+	}
+	return true;
+}
+
+template <unsigned M1, unsigned N1, typename Field1 = Rational, unsigned N2, typename Field2 = Rational>
+bool operator!= (const Matrix<M1, N1, Field1>& a, const SquareMatrix<N2, Field2>& b) {
+	return !(a == b);
+}
+
+template <unsigned M1, unsigned N1, typename Field1 = Rational, unsigned N2, typename Field2 = Rational>
+bool operator== (const SquareMatrix<N2, Field2>& b, const Matrix<M1, N1, Field1>& a) {
+	if (M1 != N2 || N1 != N2)return false;
+	for (unsigned i = 0; i < M1; i++) {
+		for (unsigned j = 0; j < N2; j++)if (a[i][j] != b[i][j])return false;
+	}
+	return true;
+}
+
+template <unsigned M1, unsigned N1, typename Field1 = Rational, unsigned N2, typename Field2 = Rational>
+bool operator!= (const SquareMatrix<N2, Field2>& b, const Matrix<M1, N1, Field1>& a) {
+	return !(a == b);
+}
